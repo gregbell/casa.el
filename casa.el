@@ -11,6 +11,7 @@
 ;;; Code:
 
 (require 'vc)
+(require 'org)
 
 (defcustom casa-dotfiles-dir "~/.config/dotfiles"
   "The location of your dotfiles directory."
@@ -82,6 +83,13 @@ My dotfiles managed by =casa.el=.")
   (casa-init-dotfiles-dir)
   (casa-init-worktree-dir))
 
+(defun casa--check-and-backup-untracked-file (file)
+  "Checks if FILE is registered with git. If not, it backs it up and puts a message in *Messages*."
+  (when (and file (file-exists-p file) (not (vc-git-registered file)))
+    (let ((backup-file (concat file ".casa-bkp-" (format-time-string "%Y%m%d%H%M%S"))))
+      (rename-file file backup-file)
+      (message "Backed up %s to %s" file backup-file))))
+
 (defun casa-deploy ()
   "Tangle all your dotfiles and commit them to your home directory."
   (interactive)
@@ -90,22 +98,18 @@ My dotfiles managed by =casa.el=.")
     (when (file-exists-p deploy-file)
       (load deploy-file)))
 
-  ;; 1. Raise error if there are any changes to existing dot files
-  ;; 2. Iterate through each .org file in the dotfiles directory:
   (let ((org-files (directory-files (casa-dotfiles-dir) t "\\.org$")))
     (dolist (file org-files)
       (with-current-buffer (find-file-noselect file)
-  ;;   a. tangle the file
+
+        (mapc #'casa--check-and-backup-untracked-file
+              (mapcar #'car (org-babel-tangle-collect-blocks)))
+
         (let ((tangled (org-babel-tangle)))
-          (message "Successfully tangled %s, got %s" file tangled)
           (let ((default-directory (expand-file-name "~/")))
             (with-temp-buffer
-  ;;   b. add the file to git
-              (apply #'casa--git "add" tangled))
+              (apply #'casa--git "add" tangled)))))))
 
-          )))))
-
-  ;; 3. Commit all the changes. (rollback if there's an error?)
   (let ((default-directory (expand-file-name "~/")))
     (with-temp-buffer
       (casa--git "commit" "-m" (format-time-string "'Deployed dotfiles at %Y-%m-%d %H:%M:%S'")))))
