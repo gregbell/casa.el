@@ -1,0 +1,13 @@
+#+TITLE: Casa.el
+
+****NOTE: This is pre-alpha software. Use at your own risk.****
+
+Casa.el is a package for managing dotfiles with Emacs and Org Mode.
+
+* How it works?
+
+Casa.el is simple. It's hardly any code because it leverages the power of Emacs, Org-Mode, and Git. 
+
+Your dotfiles live as .org files in a git repo in the ~.config/dotfiles~ directory (by default). Your home directory is set up to be a Git Worktree of that dotfiles repo with an "orphan" (empty in Git parlance) branch named after the host name.
+
+To update your dotfiles, you edit the appropriate Org file. Once you're happy with the changes, you run the =casa-deploy= command which will tangle all the org files into your home directory and commit the changes to the worktree. The result is that you have a "main" branch of your repo with all your dotfiles and a branch for each machine with the "tangled" or compiled output. 

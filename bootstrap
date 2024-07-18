@@ -1,0 +1,34 @@
+#!emacs --script
+
+;;
+;; Bootstrap a system with Casa.el
+;; 
+;;   $> wget https://raw.githubusercontent.com/gregbell/casa.el/main/bootstrap
+;;   $> chmod +x ./bootstrap
+;;   $> ./bootstrap
+;;
+;; If you like to live dangerously
+;; 
+;;   $> curl https://raw.githubusercontent.com/gregbell/casa.el/main/bootstrap | bash
+;;
+;; But, honestly, you should just use the first one.
+
+(message
+ "Welcome to Casa.el!
+This script will get your machine up and running.\n")
+
+(let ((casa-src-dir (concat (temporary-file-directory) "casa.el")))
+  (message "* Downloading casa.el to %s\n" casa-src-dir)
+
+  (when (eq (shell-command (format "git clone https://github.com/gregbell/casa.el %s" casa-src-dir)) 0)
+
+    (message "\n* Load the casa lisp code")
+    (add-to-list 'load-path casa-src-dir)
+    (require 'casa)
+
+    (if (y-or-n-p "Would you like to download existing dotfiles?")
+        (casa-clone-dotfiles)
+        (casa-init-dotfiles-dir))
+
+    (casa-init-worktree-dir)
+    (casa-deploy)))
